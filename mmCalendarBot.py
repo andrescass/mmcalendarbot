@@ -47,7 +47,7 @@ elif mode == "prod":
                               url_path=TOKEN)
         updater.bot.set_webhook("https://{}.herokuapp.com/{}".format(HEROKU_APP_NAME, TOKEN))
 else:
-    logger.error("No MODE specified!")
+    logger.error("No MODE  specified!")
     sys.exit(1)
 
 # Define a few command handlers. These usually take the two arguments update and
