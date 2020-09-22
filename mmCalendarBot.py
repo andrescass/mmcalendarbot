@@ -3,14 +3,7 @@
 # This program is dedicated to the public domain under the CC0 license.
 
 """
-Simple Bot to reply to Telegram messages.
-First, a few handler functions are defined. Then, those functions are passed to
-the Dispatcher and registered at their respective places.
-Then, the bot is started and runs until we press Ctrl-C on the command line.
-Usage:
-Basic Echobot example, repeats messages.
-Press Ctrl-C on the command line or send a signal to the process to stop the
-bot.
+A bot that set alarms for Miralos Morir Calendar
 """
 
 import logging
@@ -86,6 +79,19 @@ def calendar_group(context):
         if datetime.today().date() == cite_stamps_corrected[i].date():
             msg = "Hoy tenemos " + cites_dict[i]['title'] + "a las " + cite_stamps_corrected[i].strftime("%H:%M hs")
             context.bot.sendMessage(chat_id='@miralosmoriralertas', text=msg)
+
+def calendar_group_remainder(context):
+    cites_url = "http://miralosmorserver.pythonanywhere.com/api/calendar/all"
+    cites_req = requests.get(cites_url)
+    cites_dict = cites_req.json()
+    cites_hour = [c['start'] for c in cites_dict]
+    cite_stamps = [datetime.strptime(h, '%Y-%m-%dT%H:%M:%S.000Z') for h in cites_hour]
+    cite_stamps_corrected = [(h - timedelta(hours=3)) for h in cite_stamps]
+    for i in range(len(cite_stamps_corrected)):
+        if datetime.today().date() == cite_stamps_corrected[i].date():
+            if (cite_stamps[i] > datetime.now()) and (cite_stamps[i] < (datetime.now() + timedelta(hours=1))):
+                msg = "Acordate que a las " + cite_stamps_corrected[i].strftime("%H:%M hs") + " tenemos " + cites_dict[i]['title'] 
+                context.bot.sendMessage(chat_id='@miralosmoriralertas', text=msg)
     
 
 def set_timer(update, context):
@@ -149,6 +155,7 @@ def main():
     daily_cal = datetime.strptime(h, '%Y-%m-%dT%H:%M:%S.000Z')
 
     dp.job_queue.run_daily(calendar_group, time=daily_cal)
+    dp.job_queue.run_repeating(calendar_group_remainder, interval=timedelta(minutes=55))
 
     # Start the Bot
     run(updater)
