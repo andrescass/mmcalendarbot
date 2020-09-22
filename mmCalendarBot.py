@@ -30,8 +30,8 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 # Getting mode, so we could define run function for local and Heroku setup
-#mode = os.getenv("MODE")
-mode = "dev"
+mode = os.getenv("MODE")
+#mode = "dev"
 TOKEN = os.getenv("TOKEN")
 if mode == "dev":
     TOKEN = b_key
@@ -72,7 +72,7 @@ def calendar_notif(context):
     cite_stamps_corrected = [(h - timedelta(hours=3)) for h in cite_stamps]
     for i in range(len(cite_stamps_corrected)):
         if datetime.today().date() == cite_stamps_corrected[i].date():
-            msg = "Hoy tenemos " + cites_dict[i]['title'] + "a las " + cite_stamps_corrected[i].strftime("%H:%M:%S %d de %m")
+            msg = "Hoy tenemos " + cites_dict[i]['title'] + "a las " + cite_stamps_corrected[i].strftime("%H:%M hs")
             context.bot.send_message(job.context, text=msg)
 
 def calendar_group(context):
@@ -84,7 +84,7 @@ def calendar_group(context):
     cite_stamps_corrected = [(h - timedelta(hours=3)) for h in cite_stamps]
     for i in range(len(cite_stamps_corrected)):
         if datetime.today().date() == cite_stamps_corrected[i].date():
-            msg = "Hoy tenemos " + cites_dict[i]['title'] + "a las " + cite_stamps_corrected[i].strftime("%H:%M:%S %d de %m")
+            msg = "Hoy tenemos " + cites_dict[i]['title'] + "a las " + cite_stamps_corrected[i].strftime("%H:%M hs")
             context.bot.sendMessage(chat_id='@miralosmoriralertas', text=msg)
     
 
@@ -144,7 +144,9 @@ def main():
 
     dp.add_handler(CommandHandler("unset", unset, pass_chat_data=True))
 
-    dp.job_queue.run_repeating(calendar_group, interval = 10)
+    daily_cal = datetime.now() + timedelta(seconds=20)
+
+    dp.job_queue.run_daily(calendar_group, time=daily_cal)
 
     # Start the Bot
     run(updater)
