@@ -17,6 +17,9 @@ import logging
 import os
 import random
 import sys
+import json
+import requests
+from datetime import datetime, timedelta
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 b_key = "1270963300:AAHcBmzi_uoMwj62p6MFgonsZ6QaqOtJPz0"
@@ -27,9 +30,11 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 # Getting mode, so we could define run function for local and Heroku setup
-mode = os.getenv("MODE")
+#mode = os.getenv("MODE")
+mode = "dev"
 TOKEN = os.getenv("TOKEN")
 if mode == "dev":
+    TOKEN = b_key
     def run(updater):
         updater.start_polling()
 elif mode == "prod":
@@ -45,36 +50,78 @@ else:
     logger.error("No MODE specified!")
     sys.exit(1)
 
-ans_list = ["El dotor Bisman tenia contra la presidenta y lo que dijo, tenia todo confirmado todo cierto",
- "él sea estaba apuesto a todo",
- "o sea que puso el pan sobre la mesa, al pan pan, al vino vino, sobre las cartas la mesa",
- "con mucha verdad, nada de mentira y por eso lo mandaron a asesinar"]
-
-key_list = ["Nisman", "Bisman", "nisman", "bisman", "cartas", "mesa", "NISMAN", "BISMAN", "Doctora",
-"Sobre las cartas", "sobre las cartas", "apuesto a todo", "todo confirmado", "Doctor", "doctor"]
-
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
 def start(update, context):
-    """Send a message when the command /start is issued."""
-    update.message.reply_text('Hi!')
+    update.message.reply_text('Hi! Use /set <seconds> to set a timer')
 
 
-def help_command(update, context):
-    """Send a message when the command /help is issued."""
-    update.message.reply_text('Help!')
+def alarm(context):
+    """Send the alarm message."""
+    job = context.job
+    context.bot.send_message(job.context, text='Beep!')
+
+def calendar_notif(context):
+    """ Check Calendar for dates and notify"""
+    job = context.job
+    cites_url = "http://miralosmorserver.pythonanywhere.com/api/calendar/all"
+    cites_req = requests.get(cites_url)
+    cites_dict = cites_req.json()
+    cites_hour = [c['start'] for c in cites_dict]
+    cite_stamps = [datetime.strptime(h, '%Y-%m-%dT%H:%M:%S.000Z') for h in cites_hour]
+    cite_stamps_corrected = [(h - timedelta(hours=3)) for h in cite_stamps]
+    for i in range(len(cite_stamps_corrected)):
+        if datetime.today().date() == cite_stamps_corrected[i].date():
+            msg = "Hoy tenemos " + cites_dict[i]['title'] + "a las " + cite_stamps_corrected[i].strftime("%H:%M:%S %d de %m")
+            context.bot.send_message(job.context, text=msg)
+
+def calendar_group(context):
+    cites_url = "http://miralosmorserver.pythonanywhere.com/api/calendar/all"
+    cites_req = requests.get(cites_url)
+    cites_dict = cites_req.json()
+    cites_hour = [c['start'] for c in cites_dict]
+    cite_stamps = [datetime.strptime(h, '%Y-%m-%dT%H:%M:%S.000Z') for h in cites_hour]
+    cite_stamps_corrected = [(h - timedelta(hours=3)) for h in cite_stamps]
+    for i in range(len(cite_stamps_corrected)):
+        if datetime.today().date() == cite_stamps_corrected[i].date():
+            msg = "Hoy tenemos " + cites_dict[i]['title'] + "a las " + cite_stamps_corrected[i].strftime("%H:%M:%S %d de %m")
+            context.bot.sendMessage(chat_id='@miralosmoriralertas', text=msg)
+    
+
+def set_timer(update, context):
+    """Add a job to the queue."""
+    chat_id = update.message.chat_id
+    try:
+        # args[0] should contain the time for the timer in seconds
+        due = int(context.args[0])
+        if due < 0:
+            update.message.reply_text('Sorry we can not go back to future!')
+            return
+
+        # Add job to queue and stop current one if there is a timer already
+        if 'job' in context.chat_data:
+            old_job = context.chat_data['job']
+            old_job.schedule_removal()
+        new_job = context.job_queue.run_repeating(calendar_notif, interval = due, context=chat_id)
+        context.chat_data['job'] = new_job
+
+        update.message.reply_text('Timer successfully set!')
+
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /set <seconds>')
 
 
-def echo(update, context):
-    """Echo the user message."""
-    answer = ""
-    ok = False
-    for k in key_list:
-        if k in update.message.text:
-            answer = random.choice(ans_list)
-            ok = True
-    if ok:
-        update.message.reply_text(answer)
+def unset(update, context):
+    """Remove the job if the user changed their mind."""
+    if 'job' not in context.chat_data:
+        update.message.reply_text('You have no active timer')
+        return
+
+    job = context.chat_data['job']
+    job.schedule_removal()
+    del context.chat_data['job']
+
+    update.message.reply_text('Timer successfully unset!')
 
 
 def main():
@@ -89,10 +136,15 @@ def main():
 
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("help", help_command))
+    dp.add_handler(CommandHandler("help", start))
+    dp.add_handler(CommandHandler("set", set_timer,
+                                  pass_args=True,
+                                  pass_job_queue=True,
+                                  pass_chat_data=True))
 
-    # on noncommand i.e message - echo the message on Telegram
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+    dp.add_handler(CommandHandler("unset", unset, pass_chat_data=True))
+
+    dp.job_queue.run_repeating(calendar_group, interval = 10)
 
     # Start the Bot
     run(updater)
