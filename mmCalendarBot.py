@@ -144,7 +144,9 @@ def main():
 
     dp.add_handler(CommandHandler("unset", unset, pass_chat_data=True))
 
-    daily_cal = datetime.now() + timedelta(seconds=20)
+    h = "2020-09-22T12:00:00.000Z"
+
+    daily_cal = datetime.strptime(h, '%Y-%m-%dT%H:%M:%S.000Z')
 
     dp.job_queue.run_daily(calendar_group, time=daily_cal)
 
