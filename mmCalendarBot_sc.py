@@ -68,7 +68,7 @@ def calendar_notif(context):
             msg = "Hoy tenemos " + cites_dict[i]['title'] + "a las " + cite_stamps_corrected[i].strftime("%H:%M hs")
             context.bot.send_message(job.context, text=msg)
 
-def calendar_group(context):
+def calendar_group(dp):
     cites_url = "http://miralosmorserver.pythonanywhere.com/api/calendar/all"
     cites_req = requests.get(cites_url)
     cites_dict = cites_req.json()
@@ -77,10 +77,10 @@ def calendar_group(context):
     cite_stamps_corrected = [(h - timedelta(hours=3)) for h in cite_stamps]
     for i in range(len(cite_stamps_corrected)):
         if datetime.today().date() == cite_stamps_corrected[i].date():
-            msg = "Hoy tenemos " + cites_dict[i]['title'] + "a las " + cite_stamps_corrected[i].strftime("%H:%M hs")
-            context.bot.sendMessage(chat_id='@miralosmoriralertas', text=msg)
+            msg = "Hoy tenemos '" + cites_dict[i]['title'] + "' a las " + cite_stamps_corrected[i].strftime("%H:%M hs")
+            dp.bot.sendMessage(chat_id='@miralosmoriralertas', text=msg)
 
-def calendar_group_remainder(context):
+def calendar_group_remainder(dp):
     cites_url = "http://miralosmorserver.pythonanywhere.com/api/calendar/all"
     cites_req = requests.get(cites_url)
     cites_dict = cites_req.json()
@@ -90,8 +90,8 @@ def calendar_group_remainder(context):
     for i in range(len(cite_stamps_corrected)):
         if datetime.today().date() == cite_stamps_corrected[i].date():
             if (cite_stamps[i] > datetime.now()) and (cite_stamps[i] < (datetime.now() + timedelta(hours=1))):
-                msg = "Acordate que a las " + cite_stamps_corrected[i].strftime("%H:%M hs") + " tenemos " + cites_dict[i]['title'] 
-                context.bot.sendMessage(chat_id='@miralosmoriralertas', text=msg)
+                msg = "Acordate que a las " + cite_stamps_corrected[i].strftime("%H:%M hs") + " tenemos '" + cites_dict[i]['title'] + "'"
+                dp.bot.sendMessage(chat_id='@miralosmoriralertas', text=msg)
     
 
 def set_timer(update, context):
@@ -130,7 +130,7 @@ def unset(update, context):
     update.message.reply_text('Timer successfully unset!')
 
 
-def main():
+def main(d_or_r):
     """Start the bot."""
     # Create the Updater and pass it your bot's token.
     # Make sure to set use_context=True to use the new context based callbacks
@@ -143,30 +143,38 @@ def main():
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("help", start))
-    dp.add_handler(CommandHandler("set", set_timer,
-                                  pass_args=True,
-                                  pass_job_queue=True,
-                                  pass_chat_data=True))
+    #dp.add_handler(CommandHandler("set", set_timer,
+     #                             pass_args=True,
+      #                            pass_job_queue=True,
+       #                           pass_chat_data=True))
 
-    dp.add_handler(CommandHandler("unset", unset, pass_chat_data=True))
+    #dp.add_handler(CommandHandler("unset", unset, pass_chat_data=True))
 
     h = "2020-09-22T12:00:00.000Z"
 
     daily_cal = datetime.strptime(h, '%Y-%m-%dT%H:%M:%S.000Z')
 
-    dp.job_queue.run_daily(calendar_group, time=daily_cal)
-    dp.job_queue.run_repeating(calendar_group_remainder, interval=timedelta(minutes=55))
+    #dp.job_queue.run_daily(calendar_group, time=daily_cal)
+    #dp.job_queue.run_repeating(calendar_group_remainder, interval=timedelta(minutes=55))
 
     msg = "mensaje de prueba"
-    dp.bot.sendMessage(chat_id='@miralosmoriralertas', text=msg)
+    #dp.bot.sendMessage(chat_id='@miralosmoriralertas', text=msg)
     # Start the Bot
-    run(updater)
+    if d_or_r == "daily":
+        print("daily")
+        calendar_group(dp)
+    else:
+        print("reminder")
+        calendar_group_remainder(dp)
+
+    #run(updater)
 
     # Run the bot until you press Ctrl-C or the process receives SIGINT,
     # SIGTERM or SIGABRT. This should be used most of the time, since
     # start_polling() is non-blocking and will stop the bot gracefully.
-    updater.idle()
+    #updater.idle()
 
 
 if __name__ == '__main__':
-    main()
+    if  len(sys.argv) > 1:
+        main(sys.argv[1])
