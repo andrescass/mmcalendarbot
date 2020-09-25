@@ -88,7 +88,7 @@ def calendar_group_remainder(dp):
     cite_stamps = [datetime.strptime(h, '%Y-%m-%dT%H:%M:%S.000Z') for h in cites_hour]
     cite_stamps_corrected = [(h - timedelta(hours=3)) for h in cite_stamps]
     for i in range(len(cite_stamps_corrected)):
-        if (cite_stamps[i] > datetime.now()) and (cite_stamps[i] < (datetime.now() + timedelta(hours=1))):
+        if (cite_stamps[i] > datetime.now()) and (cite_stamps[i] < (datetime.now() + timedelta(hours=1, minutes=2))):
             msg = "Acordate que a las " + cite_stamps_corrected[i].strftime("%H:%M hs") + " tenemos '" + cites_dict[i]['title'] + "'"
             dp.bot.sendMessage(chat_id='@miralosmoriralertas', text=msg)
     
