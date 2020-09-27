@@ -15,6 +15,9 @@ import requests
 from datetime import datetime, timedelta
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
+#channel_id = '@miralosmoriralertas'
+channel_id = '@mmalertasdebug'
+
 b_key = "1270963300:AAHcBmzi_uoMwj62p6MFgonsZ6QaqOtJPz0"
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -78,7 +81,7 @@ def calendar_group(dp):
     for i in range(len(cite_stamps_corrected)):
         if datetime.today().date() == cite_stamps_corrected[i].date():
             msg = "Hoy tenemos '" + cites_dict[i]['title'] + "' a las " + cite_stamps_corrected[i].strftime("%H:%M hs")
-            dp.bot.sendMessage(chat_id='@miralosmoriralertas', text=msg)
+            dp.bot.sendMessage(chat_id=channel_id, text=msg)
 
 def calendar_group_remainder(dp):
     cites_url = "http://miralosmorserver.pythonanywhere.com/api/calendar/all"
@@ -90,7 +93,7 @@ def calendar_group_remainder(dp):
     for i in range(len(cite_stamps_corrected)):
         if (cite_stamps[i] > datetime.now()) and (cite_stamps[i] < (datetime.now() + timedelta(hours=1, minutes=2))):
             msg = "Acordate que a las " + cite_stamps_corrected[i].strftime("%H:%M hs") + " tenemos '" + cites_dict[i]['title'] + "'"
-            dp.bot.sendMessage(chat_id='@miralosmoriralertas', text=msg)
+            dp.bot.sendMessage(chat_id=channel_id, text=msg)
     
 
 def set_timer(update, context):
