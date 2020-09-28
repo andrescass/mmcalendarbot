@@ -78,10 +78,20 @@ def calendar_group(dp):
     cites_hour = [c['start'] for c in cites_dict]
     cite_stamps = [datetime.strptime(h, '%Y-%m-%dT%H:%M:%S.000Z') for h in cites_hour]
     cite_stamps_corrected = [(h - timedelta(hours=3)) for h in cite_stamps]
+    is_cite = False
     for i in range(len(cite_stamps_corrected)):
         if datetime.today().date() == cite_stamps_corrected[i].date():
-            msg = "Hoy tenemos '" + cites_dict[i]['title'] + "' a las " + cite_stamps_corrected[i].strftime("%H:%M hs")
+            if cites_dict[i]['citeClass'] == "Lo Cumpleañito":
+                msg = "Hoy hay cumpleaños!!! " + ' ' +  cites_dict[i]['title'] + ' ' + u'\U0001F382'  
+            elif cites_dict[i]['citeClass'] == "Discord":
+                msg = "Hoy tenemos '" + cites_dict[i]['title'] + "' a las " + cite_stamps_corrected[i].strftime("%H:%M hs") + " en Discord " + u'\U0001F50A' + u'\U0001F50A'
+            else:
+                msg = "Hoy tenemos '" + cites_dict[i]['title'] + "' a las " + cite_stamps_corrected[i].strftime("%H:%M hs")
             dp.bot.sendMessage(chat_id=channel_id, text=msg)
+            is_cite = True
+    if is_cite:
+        url_msge = "Acordate de visitar https://miralosmorweb.github.io/mmw/#/calendar para ver todos los eventos"
+        dp.bot.sendMessage(chat_id=channel_id, text=url_msge)
 
 def calendar_group_remainder(dp):
     cites_url = "http://miralosmorserver.pythonanywhere.com/api/calendar/all"
@@ -92,7 +102,8 @@ def calendar_group_remainder(dp):
     cite_stamps_corrected = [(h - timedelta(hours=3)) for h in cite_stamps]
     for i in range(len(cite_stamps_corrected)):
         if (cite_stamps[i] > datetime.now()) and (cite_stamps[i] < (datetime.now() + timedelta(hours=1, minutes=2))):
-            msg = "Acordate que a las " + cite_stamps_corrected[i].strftime("%H:%M hs") + " tenemos '" + cites_dict[i]['title'] + "'"
+            msg = "Acordate que a las " + cite_stamps_corrected[i].strftime("%H:%M hs") + " tenemos '" + cites_dict[i]['title'] + "'. "
+            msg += cites_dict[i]['description']
             dp.bot.sendMessage(chat_id=channel_id, text=msg)
     
 
