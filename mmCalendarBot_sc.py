@@ -18,7 +18,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 channel_id = '@miralosmoriralertas'
 #channel_id = '@mmalertasdebug'
 
-b_key = "1270963300:AAHcBmzi_uoMwj62p6MFgonsZ6QaqOtJPz0"
+
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
